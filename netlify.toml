@@ -1,0 +1,4 @@
+﻿[build]
+  command = "npm run build"
+  publish = ".next"
+  # Leaving 'base' out entirely forces Netlify to use the root
