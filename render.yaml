@@ -1,0 +1,13 @@
+# Render.com Blueprint - Audit Armor Platform
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: audit-armor
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: DATA_DIR
+        value: /tmp/audit_armor_data

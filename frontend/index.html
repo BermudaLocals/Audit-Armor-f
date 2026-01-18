@@ -1,1 +1,501 @@
-﻿
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Armor — Governance Intelligence Platform</title>
+    <style>
+        :root {
+            --lava-core: #FF4500;
+            --lava-hot: #FF6B35;
+            --magma-glow: #FF8C42;
+            --ember: #E85D04;
+            --deep-black: #0D0D0D;
+            --obsidian: #1A1A1A;
+            --smoke: #2D2D2D;
+            --ash: #404040;
+            --text-primary: #FFFFFF;
+            --text-secondary: #B0B0B0;
+            --text-muted: #707070;
+            --status-governed: #00C853;
+            --status-warning: #FFB300;
+            --status-critical: #FF1744;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, var(--deep-black) 0%, #1a0a0a 50%, var(--obsidian) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        
+        /* Login Screen */
+        .login-screen {
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px;
+        }
+        .login-screen.hidden { display: none; }
+        
+        .login-box {
+            background: rgba(0,0,0,0.8); border: 1px solid var(--magma-glow);
+            border-radius: 20px; padding: 50px; min-width: 400px;
+            box-shadow: 0 0 60px rgba(255,69,0,0.2);
+        }
+        .login-box h1 { color: var(--lava-core); margin-bottom: 10px; font-size: 28px; text-align: center; }
+        .login-box .subtitle { color: var(--text-secondary); margin-bottom: 30px; text-align: center; font-size: 14px; }
+        .login-box input {
+            width: 100%; padding: 15px 20px; margin-bottom: 15px;
+            background: var(--obsidian); border: 1px solid var(--smoke);
+            border-radius: 10px; color: var(--text-primary); font-size: 16px;
+        }
+        .login-box input:focus { outline: none; border-color: var(--lava-core); box-shadow: 0 0 15px rgba(255,69,0,0.3); }
+        .login-box button {
+            width: 100%; padding: 15px; background: linear-gradient(135deg, var(--lava-core), var(--ember));
+            border: none; border-radius: 10px; color: white; font-size: 16px;
+            font-weight: bold; cursor: pointer; transition: all 0.3s;
+        }
+        .login-box button:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255,69,0,0.4); }
+        .login-box .demo-hint { color: var(--text-muted); margin-top: 20px; font-size: 12px; text-align: center; }
+        
+        /* Dashboard */
+        .dashboard { display: none; }
+        .dashboard.active { display: block; }
+        
+        /* Header */
+        .header {
+            background: rgba(0,0,0,0.9); border-bottom: 1px solid var(--magma-glow);
+            padding: 15px 30px; display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .header .logo { display: flex; align-items: center; gap: 15px; }
+        .header .logo h1 { color: var(--lava-core); font-size: 24px; }
+        .header nav { display: flex; gap: 10px; }
+        .header nav a {
+            color: var(--text-secondary); text-decoration: none; padding: 10px 20px;
+            border-radius: 8px; transition: all 0.3s; font-weight: 500;
+        }
+        .header nav a:hover, .header nav a.active { background: rgba(255,69,0,0.2); color: var(--lava-hot); }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-badge { background: var(--lava-core); padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .logout-btn { background: transparent; border: 1px solid var(--smoke); color: var(--text-secondary); padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+        .logout-btn:hover { border-color: var(--lava-core); color: var(--lava-core); }
+        
+        /* Main Content */
+        .main-content { padding: 30px; max-width: 1400px; margin: 0 auto; }
+        
+        /* Dashboard Header */
+        .dashboard-header { margin-bottom: 30px; }
+        .dashboard-header h1 { color: var(--lava-core); font-size: 32px; margin-bottom: 10px; }
+        .dashboard-header p { color: var(--text-secondary); }
+        
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .stat-card {
+            background: rgba(0,0,0,0.5); border: 1px solid var(--smoke);
+            border-radius: 15px; padding: 25px; transition: all 0.3s;
+        }
+        .stat-card:hover { border-color: var(--magma-glow); transform: translateY(-3px); }
+        .stat-card .label { color: var(--text-muted); font-size: 14px; margin-bottom: 10px; }
+        .stat-card .value { color: var(--text-primary); font-size: 36px; font-weight: bold; }
+        .stat-card .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 12px; margin-top: 10px; }
+        .stat-card .status.governed { background: rgba(0,200,83,0.2); color: var(--status-governed); }
+        .stat-card .status.warning { background: rgba(255,179,0,0.2); color: var(--status-warning); }
+        .stat-card .status.critical { background: rgba(255,23,68,0.2); color: var(--status-critical); }
+        
+        /* Orbit Diagram */
+        .orbit-container {
+            background: rgba(0,0,0,0.6); border-radius: 20px; padding: 40px;
+            margin: 40px 0; border: 1px solid var(--magma-glow);
+        }
+        .orbit-container h2 { text-align: center; color: var(--lava-core); margin-bottom: 30px; }
+        .orbit-svg { width: 100%; max-width: 700px; margin: 0 auto; display: block; }
+        
+        /* Fleet Dashboard */
+        .fleet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; margin: 40px 0; }
+        .fleet-card {
+            background: rgba(0,0,0,0.5); border-radius: 15px; overflow: hidden;
+            border: 1px solid var(--smoke); transition: all 0.3s;
+        }
+        .fleet-card:hover { border-color: var(--magma-glow); box-shadow: 0 10px 30px rgba(255,69,0,0.15); transform: translateY(-3px); }
+        .fleet-card-header {
+            background: linear-gradient(135deg, rgba(255,69,0,0.2), rgba(255,107,53,0.1));
+            padding: 20px; border-bottom: 1px solid var(--smoke);
+        }
+        .fleet-card-header h3 { color: var(--lava-hot); display: flex; align-items: center; gap: 10px; }
+        .fleet-card-body { padding: 20px; }
+        .fleet-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .fleet-item:last-child { border-bottom: none; }
+        .fleet-item-name { color: var(--text-secondary); }
+        .fleet-item-value { color: var(--text-primary); font-weight: bold; }
+        .fleet-status { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .fleet-status.governed { background: rgba(0,200,83,0.2); color: var(--status-governed); }
+        .fleet-status.warning { background: rgba(255,179,0,0.2); color: var(--status-warning); }
+        .fleet-status.critical { background: rgba(255,23,68,0.2); color: var(--status-critical); }
+        
+        /* Tasks */
+        .tasks-section { margin: 40px 0; }
+        .tasks-section h2 { color: var(--lava-core); margin-bottom: 20px; }
+        .task-item {
+            background: rgba(0,0,0,0.4); border: 1px solid var(--smoke);
+            border-radius: 10px; padding: 20px; margin-bottom: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.3s;
+        }
+        .task-item:hover { border-color: var(--magma-glow); }
+        .task-title { font-weight: 500; }
+        .task-due { color: var(--text-muted); font-size: 14px; }
+        .task-priority { padding: 5px 12px; border-radius: 15px; font-size: 11px; font-weight: bold; }
+        .task-priority.high { background: rgba(255,23,68,0.2); color: var(--status-critical); }
+        .task-priority.medium { background: rgba(255,179,0,0.2); color: var(--status-warning); }
+        .task-priority.low { background: rgba(0,200,83,0.2); color: var(--status-governed); }
+        
+        /* Pulse Animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .pulse { animation: pulse 2s ease-in-out infinite; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 15px; }
+            .login-box { min-width: 90%; padding: 30px; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-box">
+            <h1>🛡️ Audit Armor</h1>
+            <p class="subtitle">Governance Intelligence Platform</p>
+            <input type="email" id="email" placeholder="Email Address" value="demo@auditarmor.com">
+            <input type="password" id="pin" placeholder="PIN Code" value="1234">
+            <button onclick="handleLogin()">Access Platform</button>
+            <p class="demo-hint">Demo: demo@auditarmor.com / 1234</p>
+        </div>
+    </div>
+    
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard">
+        <header class="header">
+            <div class="logo">
+                <span style="font-size: 32px;">🛡️</span>
+                <h1>Audit Armor</h1>
+            </div>
+            <nav id="mainNav">
+                <a href="#" class="active" onclick="showSection('overview')">Overview</a>
+                <a href="#" onclick="showSection('fleet')">Fleet</a>
+                <a href="#" onclick="showSection('orbit')">Orbit</a>
+                <a href="#" onclick="showSection('tasks')">Tasks</a>
+            </nav>
+            <div class="user-info">
+                <span id="userEmail"></span>
+                <span class="user-badge" id="userRole">CEO</span>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            <!-- Overview Section -->
+            <div id="overviewSection">
+                <div class="dashboard-header">
+                    <h1>🎯 Command Center</h1>
+                    <p>Real-time governance intelligence across all jurisdictions</p>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="label">Governance Score</div>
+                        <div class="value" id="govScore">98.4%</div>
+                        <span class="status governed">Beyond Reasonable Doubt</span>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Active Ships</div>
+                        <div class="value" id="shipCount">12</div>
+                        <span class="status governed">All Operational</span>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Total Tenants</div>
+                        <div class="value" id="tenantCount">847</div>
+                        <span class="status governed">Protected</span>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Active Tasks</div>
+                        <div class="value" id="taskCount">5</div>
+                        <span class="status warning">2 High Priority</span>
+                    </div>
+                </div>
+                
+                <!-- Mini Orbit Preview -->
+                <div class="orbit-container">
+                    <h2>🌐 Governance Hierarchy</h2>
+                    <div id="orbitPreview"></div>
+                </div>
+            </div>
+            
+            <!-- Fleet Section -->
+            <div id="fleetSection" style="display: none;">
+                <div class="dashboard-header">
+                    <h1>🚀 Fleet Command</h1>
+                    <p>Ship-level governance and tenant oversight</p>
+                </div>
+                
+                <div class="fleet-grid" id="fleetGrid"></div>
+            </div>
+            
+            <!-- Orbit Section -->
+            <div id="orbitSection" style="display: none;">
+                <div class="dashboard-header">
+                    <h1>🌐 Audit Armor Orbit</h1>
+                    <p>Hierarchical governance visualization — Core → Ships → Tenants</p>
+                </div>
+                
+                <div class="orbit-container">
+                    <div id="orbitDiagram"></div>
+                </div>
+            </div>
+            
+            <!-- Tasks Section -->
+            <div id="tasksSection" style="display: none;">
+                <div class="dashboard-header">
+                    <h1>📋 Governance Tasks</h1>
+                    <p>Pending actions and compliance requirements</p>
+                </div>
+                
+                <div class="tasks-section" id="tasksList"></div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        // Demo data - renders immediately, no blocking
+        const DEMO_DATA = {
+            ships: [
+                {id: "AA1", name: "Alpha Prime", fleet: "Alpha", tenants: 78, status: "governed", compliance: 99.8},
+                {id: "AA2", name: "Alpha Secondary", fleet: "Alpha", tenants: 82, status: "governed", compliance: 99.5},
+                {id: "AA3", name: "Alpha Tertiary", fleet: "Alpha", tenants: 76, status: "governed", compliance: 99.9},
+                {id: "AA4", name: "Alpha Quaternary", fleet: "Alpha", tenants: 76, status: "governed", compliance: 99.2},
+                {id: "AA5", name: "Beta Prime", fleet: "Beta", tenants: 65, status: "governed", compliance: 98.9},
+                {id: "AA6", name: "Beta Secondary", fleet: "Beta", tenants: 58, status: "governed", compliance: 99.1},
+                {id: "AA7", name: "Beta Tertiary", fleet: "Beta", tenants: 62, status: "warning", compliance: 97.8},
+                {id: "AA8", name: "Beta Quaternary", fleet: "Beta", tenants: 55, status: "governed", compliance: 98.5},
+                {id: "AA9", name: "Beta Quintary", fleet: "Beta", tenants: 58, status: "governed", compliance: 99.0},
+                {id: "AA10", name: "Gamma Prime", fleet: "Gamma", tenants: 85, status: "governed", compliance: 97.2},
+                {id: "AA11", name: "Gamma Secondary", fleet: "Gamma", tenants: 78, status: "warning", compliance: 96.8},
+                {id: "AA12", name: "Gamma Tertiary", fleet: "Gamma", tenants: 74, status: "governed", compliance: 97.5}
+            ],
+            tasks: [
+                {id: "T1", title: "Quarterly Compliance Review", due: "2026-01-25", priority: "high", status: "pending"},
+                {id: "T2", title: "Tenant Onboarding Verification", due: "2026-01-20", priority: "medium", status: "in_progress"},
+                {id: "T3", title: "Security Audit Documentation", due: "2026-01-30", priority: "low", status: "pending"},
+                {id: "T4", title: "Fleet Alpha Inspection", due: "2026-02-01", priority: "medium", status: "pending"},
+                {id: "T5", title: "Annual Governance Report", due: "2026-02-15", priority: "high", status: "pending"}
+            ]
+        };
+        
+        // Login handler - NO BLOCKING, graceful flow
+        function handleLogin() {
+            const email = document.getElementById('email').value;
+            const pin = document.getElementById('pin').value;
+            
+            // Simple validation - always allows demo access
+            if (email && (pin === '1234' || pin === '')) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('dashboard').classList.add('active');
+                document.getElementById('userEmail').textContent = email;
+                
+                // Role detection
+                let role = 'Viewer';
+                if (email.includes('ceo') || email.includes('demo') || email.includes('admin')) role = 'CEO';
+                else if (email.includes('auditor')) role = 'Auditor';
+                document.getElementById('userRole').textContent = role;
+                
+                // Render all components immediately
+                renderDashboard();
+            } else {
+                alert('Access granted with any email + PIN 1234');
+            }
+        }
+        
+        function handleLogout() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('dashboard').classList.remove('active');
+        }
+        
+        function showSection(section) {
+            // Update nav
+            document.querySelectorAll('#mainNav a').forEach(a => a.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Hide all sections
+            ['overview', 'fleet', 'orbit', 'tasks'].forEach(s => {
+                document.getElementById(s + 'Section').style.display = 'none';
+            });
+            
+            // Show selected
+            document.getElementById(section + 'Section').style.display = 'block';
+        }
+        
+        function renderDashboard() {
+            // Calculate stats
+            const totalTenants = DEMO_DATA.ships.reduce((sum, s) => sum + s.tenants, 0);
+            const avgCompliance = DEMO_DATA.ships.reduce((sum, s) => sum + s.compliance, 0) / DEMO_DATA.ships.length;
+            
+            document.getElementById('govScore').textContent = avgCompliance.toFixed(1) + '%';
+            document.getElementById('shipCount').textContent = DEMO_DATA.ships.length;
+            document.getElementById('tenantCount').textContent = totalTenants;
+            document.getElementById('taskCount').textContent = DEMO_DATA.tasks.length;
+            
+            // Render components
+            renderOrbit('orbitPreview', true);
+            renderOrbit('orbitDiagram', false);
+            renderFleet();
+            renderTasks();
+            
+            // Try to fetch live data (non-blocking)
+            fetchLiveData();
+        }
+        
+        function renderOrbit(containerId, mini = false) {
+            const size = mini ? 400 : 700;
+            const cx = size / 2;
+            const cy = size / 2;
+            
+            let svg = `<svg class="orbit-svg" viewBox="0 0 ${size} ${size}">`;
+            
+            // Orbit rings
+            svg += `<circle cx="${cx}" cy="${cy}" r="${size*0.45}" fill="none" stroke="rgba(255,69,0,0.1)" stroke-width="1"/>`;
+            svg += `<circle cx="${cx}" cy="${cy}" r="${size*0.32}" fill="none" stroke="rgba(255,69,0,0.15)" stroke-width="1"/>`;
+            svg += `<circle cx="${cx}" cy="${cy}" r="${size*0.18}" fill="none" stroke="rgba(255,69,0,0.2)" stroke-width="1"/>`;
+            
+            // Core (Mothership)
+            svg += `<circle cx="${cx}" cy="${cy}" r="${size*0.08}" fill="url(#coreGradient)" class="pulse"/>`;
+            svg += `<text x="${cx}" y="${cy+4}" text-anchor="middle" fill="white" font-size="${mini?10:14}" font-weight="bold">CORE</text>`;
+            
+            // Ships on middle ring (AA1-AA12)
+            DEMO_DATA.ships.forEach((ship, i) => {
+                const angle = (i / 12) * Math.PI * 2 - Math.PI/2;
+                const r = size * 0.32;
+                const x = cx + Math.cos(angle) * r;
+                const y = cy + Math.sin(angle) * r;
+                const color = ship.status === 'governed' ? '#00C853' : ship.status === 'warning' ? '#FFB300' : '#FF1744';
+                const shipSize = mini ? 12 : 18;
+                
+                svg += `<circle cx="${x}" cy="${y}" r="${shipSize}" fill="${color}" opacity="0.9"/>`;
+                if (!mini) {
+                    svg += `<text x="${x}" y="${y+4}" text-anchor="middle" fill="white" font-size="9" font-weight="bold">${ship.id}</text>`;
+                }
+            });
+            
+            // Tenant nodes on outer ring
+            const tenantCount = mini ? 24 : 48;
+            for (let i = 0; i < tenantCount; i++) {
+                const angle = (i / tenantCount) * Math.PI * 2;
+                const r = size * 0.45;
+                const x = cx + Math.cos(angle) * r;
+                const y = cy + Math.sin(angle) * r;
+                svg += `<circle cx="${x}" cy="${y}" r="${mini?3:5}" fill="#00C853" opacity="0.6"/>`;
+            }
+            
+            // Gradient definition
+            svg += `
+                <defs>
+                    <radialGradient id="coreGradient">
+                        <stop offset="0%" stop-color="#FF6B35"/>
+                        <stop offset="100%" stop-color="#FF4500"/>
+                    </radialGradient>
+                </defs>
+            `;
+            
+            svg += '</svg>';
+            
+            // Legend
+            if (!mini) {
+                svg += `
+                    <div style="display:flex;justify-content:center;gap:30px;margin-top:20px;">
+                        <span style="color:#00C853;">● Governed</span>
+                        <span style="color:#FFB300;">● Warning</span>
+                        <span style="color:#FF1744;">● Critical</span>
+                    </div>
+                `;
+            }
+            
+            document.getElementById(containerId).innerHTML = svg;
+        }
+        
+        function renderFleet() {
+            const fleets = {};
+            DEMO_DATA.ships.forEach(ship => {
+                if (!fleets[ship.fleet]) fleets[ship.fleet] = [];
+                fleets[ship.fleet].push(ship);
+            });
+            
+            let html = '';
+            Object.entries(fleets).forEach(([fleetName, ships]) => {
+                html += `
+                    <div class="fleet-card">
+                        <div class="fleet-card-header">
+                            <h3>🚀 Fleet ${fleetName}</h3>
+                        </div>
+                        <div class="fleet-card-body">
+                            ${ships.map(ship => `
+                                <div class="fleet-item">
+                                    <span class="fleet-item-name">${ship.id} — ${ship.name}</span>
+                                    <span class="fleet-status ${ship.status}">${ship.status.toUpperCase()}</span>
+                                </div>
+                                <div class="fleet-item">
+                                    <span class="fleet-item-name">Tenants</span>
+                                    <span class="fleet-item-value">${ship.tenants}</span>
+                                </div>
+                                <div class="fleet-item">
+                                    <span class="fleet-item-name">Compliance</span>
+                                    <span class="fleet-item-value">${ship.compliance}%</span>
+                                </div>
+                            `).join('<hr style="border-color:rgba(255,255,255,0.05);margin:10px 0;">')}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('fleetGrid').innerHTML = html;
+        }
+        
+        function renderTasks() {
+            const html = DEMO_DATA.tasks.map(task => `
+                <div class="task-item">
+                    <div>
+                        <div class="task-title">${task.title}</div>
+                        <div class="task-due">Due: ${task.due}</div>
+                    </div>
+                    <span class="task-priority ${task.priority}">${task.priority.toUpperCase()}</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('tasksList').innerHTML = html;
+        }
+        
+        // Non-blocking API fetch - enhances demo data if available
+        async function fetchLiveData() {
+            try {
+                const res = await fetch('/api/v1/score');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('govScore').textContent = data.overall_score + '%';
+                    document.getElementById('shipCount').textContent = data.total_ships;
+                    document.getElementById('tenantCount').textContent = data.total_tenants;
+                }
+            } catch (e) {
+                // Silent fail - demo data already rendered
+                console.log('Using demo data (API unavailable)');
+            }
+        }
+        
+        // Ready
+        console.log('🛡️ Audit Armor Platform Ready');
+    </script>
+</body>
+</html>
